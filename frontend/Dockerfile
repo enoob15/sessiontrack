@@ -5,9 +5,12 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies
+# Explicitly set npm configuration
+RUN npm config set cache /tmp/npm-cache
+
+# Install dependencies with verbose logging
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --verbose || (cat npm-debug.log && exit 1)
 
 # Build the application
 FROM base AS builder
