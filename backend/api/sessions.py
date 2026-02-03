@@ -1,26 +1,16 @@
 import os
 import json
-from typing import List, Dict
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from typing import List, Dict
 
 app = FastAPI()
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 SESSIONS_ARCHIVE = '/root/clawd/sessions_archive'
 
-@app.get("/sessions")
-async def list_sessions() -> List[Dict]:
+@app.get("/sessions", response_model=List[Dict])
+async def list_sessions():
     """
-    List all captured sessions with basic metadata
+    Retrieve list of captured sessions
     """
     try:
         # Get all JSON files in the sessions archive
@@ -35,14 +25,15 @@ async def list_sessions() -> List[Dict]:
             filepath = os.path.join(SESSIONS_ARCHIVE, filename)
             with open(filepath, 'r') as f:
                 session_data = json.load(f)
-                # Trim down the data to essential metadata
+                
+                # Prepare session summary
                 sessions.append({
-                    'id': session_data.get('id', filename),
+                    'id': session_data.get('id'),
                     'timestamp': session_data.get('timestamp'),
                     'project': session_data.get('project'),
                     'participants': session_data.get('participants', []),
                     'total_messages': session_data.get('total_messages', 0),
-                    'ai_summary': session_data.get('ai_summary')
+                    'ai_insights': session_data.get('ai_insights', {})
                 })
         
         return sessions
@@ -50,8 +41,8 @@ async def list_sessions() -> List[Dict]:
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving sessions: {str(e)}")
 
-@app.get("/sessions/{session_id}")
-async def get_session(session_id: str) -> Dict:
+@app.get("/session/{session_id}", response_model=Dict)
+async def get_session(session_id: str):
     """
     Retrieve full details of a specific session
     """
