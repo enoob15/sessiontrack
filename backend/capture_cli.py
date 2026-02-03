@@ -2,29 +2,46 @@
 import os
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, List, Optional
 import asyncio
 import argparse
+import sys
+
+# Verbose logging
+print(f"Python Version: {sys.version}", file=sys.stderr)
+print(f"Environment Variables:", file=sys.stderr)
+for key, value in os.environ.items():
+    print(f"{key}: {value[:10]}..." if len(value) > 10 else f"{key}: {value}", file=sys.stderr)
+
+# Use environment variable for Gemini key
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+print(f"Gemini API Key present: {bool(GEMINI_API_KEY)}", file=sys.stderr)
 
 try:
     import google.generativeai as genai
-except ImportError:
-    print("Gemini AI library not installed. Some features will be limited.")
+    print("Gemini library successfully imported", file=sys.stderr)
+except ImportError as e:
+    print(f"Gemini library import error: {e}", file=sys.stderr)
     genai = None
 
 class SessionCapture:
     def __init__(self, 
-                 base_path: str = '/root/clawd/sessions_archive', 
-                 gemini_api_key: Optional[str] = None):
+                 base_path: str = '/root/clawd/sessions_archive'):
         self.base_path = base_path
         os.makedirs(base_path, exist_ok=True)
         
-        # Initialize Gemini AI if possible
-        if genai and gemini_api_key:
-            genai.configure(api_key=gemini_api_key)
-            self.gemini_model = genai.GenerativeModel('gemini-pro')
+        # Initialize Gemini AI
+        if genai and GEMINI_API_KEY:
+            try:
+                genai.configure(api_key=GEMINI_API_KEY)
+                self.gemini_model = genai.GenerativeModel('gemini-pro')
+                print("Gemini model initialized successfully", file=sys.stderr)
+            except Exception as e:
+                print(f"Gemini model initialization error: {e}", file=sys.stderr)
+                self.gemini_model = None
         else:
+            print("Gemini AI not configured. AI features will be disabled.", file=sys.stderr)
             self.gemini_model = None
 
     async def capture_session(self, 
@@ -34,18 +51,9 @@ class SessionCapture:
                         project: Optional[str] = None) -> str:
         """
         Capture a complete session with metadata and AI-enhanced processing
-        
-        Args:
-            session_key: Unique session identifier
-            source: Origin of the session (webchat, cli, etc.)
-            messages: List of conversation messages
-            project: Optional project name
-        
-        Returns:
-            Path to saved session file
         """
         session_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         
         # Extract participants
         participants = list(set(
@@ -81,6 +89,7 @@ class SessionCapture:
         Use Gemini AI to enhance session metadata
         """
         if not self.gemini_model:
+            print("No Gemini model available for enhancement", file=sys.stderr)
             return
         
         try:
@@ -92,29 +101,34 @@ class SessionCapture:
             
             # Generate summary
             summary_prompt = f"""
-            Provide a concise summary of the following conversation. 
-            Identify key discussion points, decisions made, 
-            and any actionable items.
+            Analyze the following conversation and provide:
+            1. A concise summary
+            2. Key discussion topics
+            3. Potential action items
+            4. Suggested next steps
 
             Conversation:
             {conversation_text}
             """
             
+            print("Generating AI summary...", file=sys.stderr)
             summary_response = await self.gemini_model.generate_content_async(summary_prompt)
             
             # Add AI-generated insights
             session_data['ai_summary'] = summary_response.text
             session_data['ai_topics'] = self._extract_topics(summary_response.text)
+            session_data['ai_action_items'] = self._extract_action_items(summary_response.text)
+            
+            print("AI enhancement completed successfully", file=sys.stderr)
         
         except Exception as e:
-            print(f"AI enhancement error: {e}")
+            print(f"AI enhancement error: {e}", file=sys.stderr)
             session_data['ai_summary'] = "AI summarization failed"
 
     def _extract_topics(self, summary: str) -> List[str]:
         """
-        Basic topic extraction from summary
+        Extract key topics from AI summary
         """
-        # This is a placeholder - in production, use more sophisticated NLP
         common_topics = [
             'project management', 'ai', 'technology', 
             'development', 'strategy', 'automation'
@@ -124,11 +138,25 @@ class SessionCapture:
             if topic.lower() in summary.lower()
         ]
 
+    def _extract_action_items(self, summary: str) -> List[str]:
+        """
+        Extract action items from AI summary
+        """
+        # Basic extraction - can be made more sophisticated
+        action_markers = ['should', 'need to', 'to do', 'next step', 'action item']
+        
+        lines = summary.split('\n')
+        action_items = [
+            line.strip() for line in lines 
+            if any(marker in line.lower() for marker in action_markers)
+        ]
+        
+        return action_items
+
 async def main():
     parser = argparse.ArgumentParser(description='SessionTrack Capture CLI')
     parser.add_argument('--source', default='cli', help='Session source')
     parser.add_argument('--project', help='Project name')
-    parser.add_argument('--gemini-key', help='Gemini API Key for AI enhancements')
     
     args = parser.parse_args()
     
@@ -151,11 +179,11 @@ async def main():
         messages.append({
             'author': current_author,
             'content': message_content,
-            'timestamp': datetime.utcnow().isoformat()
+            'timestamp': datetime.now(UTC).isoformat()
         })
     
     # Capture session
-    capture = SessionCapture(gemini_api_key=args.gemini_key)
+    capture = SessionCapture()
     session_file = await capture.capture_session(
         session_key='manual:cli',
         source=args.source,
