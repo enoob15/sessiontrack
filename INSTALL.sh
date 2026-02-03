@@ -41,7 +41,7 @@ docker ps | grep sessiontrack
 echo "-------------------------------------------"
 echo "SessionTrack Dashboard is now running:"
 echo "Frontend: http://localhost:3025"
-echo "Backend API: http://localhost:8000"
+echo "Backend API: http://localhost:8005"
 echo "PostgreSQL: localhost:5432"
 echo "-------------------------------------------"
 

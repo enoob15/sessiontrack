@@ -8,7 +8,7 @@ services:
     ports:
       - "3025:3025"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8005
       - PORT=3025
     networks:
       - sessiontrack_network
@@ -18,13 +18,14 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8005:8005"
     volumes:
       - /root/clawd/sessions_archive:/app/sessions
       - /root/clawd/projects/sessiontrack/project_data:/app/projects
     environment:
       - SESSIONS_PATH=/app/sessions
       - PROJECTS_PATH=/app/projects
+      - PORT=8005
     networks:
       - sessiontrack_network
 
