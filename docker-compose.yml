@@ -8,9 +8,9 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
-    depends_on:
-      - backend
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    networks:
+      - sessiontrack_network
 
   backend:
     build: 
@@ -24,6 +24,8 @@ services:
     environment:
       - SESSIONS_PATH=/app/sessions
       - PROJECTS_PATH=/app/projects
+    networks:
+      - sessiontrack_network
 
   postgres:
     image: postgres:15
@@ -31,7 +33,12 @@ services:
       POSTGRES_DB: sessiontrack
       POSTGRES_PASSWORD: sessiontrackpassword
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /root/clawd/postgres_data:/var/lib/postgresql/data
+    networks:
+      - sessiontrack_network
+    ports:
+      - "5432:5432"
 
-volumes:
-  postgres_data:
+networks:
+  sessiontrack_network:
+    driver: bridge

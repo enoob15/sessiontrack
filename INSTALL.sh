@@ -1,24 +1,51 @@
 #!/bin/bash
 
-# Ensure required tools are installed
-sudo apt-get update
-sudo apt-get install -y docker.io docker-compose npm nodejs
+# Ensure script is run with sudo
+if [[ $EUID -ne 0 ]]; then
+   echo "This script must be run as root" 
+   exit 1
+fi
 
-# Clone the repository (if not already cloned)
-if [ ! -d "/root/clawd/projects/sessiontrack" ]; then
-    git clone https://github.com/enoob15/sessiontrack.git /root/clawd/projects/sessiontrack
+# Update system packages
+apt-get update
+apt-get upgrade -y
+
+# Install Docker and Docker Compose if not already installed
+if ! command -v docker &> /dev/null; then
+    apt-get install -y docker.io docker-compose
 fi
 
 # Navigate to project directory
 cd /root/clawd/projects/sessiontrack
 
-# Install frontend dependencies
-cd frontend
-npm install
-cd ..
+# Ensure directories exist
+mkdir -p /root/clawd/sessions_archive
+mkdir -p /root/clawd/projects/sessiontrack/project_data
+mkdir -p /root/clawd/postgres_data
+
+# Set appropriate permissions
+chmod -R 755 /root/clawd/sessions_archive
+chmod -R 755 /root/clawd/projects/sessiontrack/project_data
+chmod -R 755 /root/clawd/postgres_data
+
+# Stop any existing SessionTrack containers
+docker-compose down
 
 # Build and start services
 docker-compose up --build -d
 
-# Open browser (if in a graphical environment)
-xdg-open http://localhost:3000 || echo "Dashboard available at http://localhost:3000"
+# Display running containers
+docker ps | grep sessiontrack
+
+# Print access information
+echo "-------------------------------------------"
+echo "SessionTrack Dashboard is now running:"
+echo "Frontend: http://localhost:3000"
+echo "Backend API: http://localhost:8000"
+echo "PostgreSQL: localhost:5432"
+echo "-------------------------------------------"
+
+# Optional: Open in browser if graphical environment is available
+if [[ -n "$DISPLAY" ]]; then
+    xdg-open http://localhost:3000 || echo "Dashboard available at http://localhost:3000"
+fi
