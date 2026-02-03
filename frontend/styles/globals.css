@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-100 text-gray-900;
+}
+
+.card {
+  @apply bg-white shadow-md rounded-lg p-6;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-md transition-colors;
+}
+
+.btn-primary {
+  @apply bg-sessiontrack-primary text-white hover:bg-blue-700;
+}
+
+.btn-secondary {
+  @apply bg-sessiontrack-secondary text-white hover:bg-green-700;
+}

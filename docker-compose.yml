@@ -1,32 +1,37 @@
 version: '3.8'
 
 services:
-  backend:
-    build: ./backend
-    ports:
-      - "8000:8000"
-    environment:
-      - DATABASE_URL=postgresql://sessiontrack:password@db/sessiontrack
-    depends_on:
-      - db
-    volumes:
-      - ./backend:/app
-
-  db:
-    image: postgres:15-timescale
-    environment:
-      - POSTGRES_DB=sessiontrack
-      - POSTGRES_USER=sessiontrack
-      - POSTGRES_PASSWORD=password
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
   frontend:
-    build: ./frontend
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
     depends_on:
       - backend
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - /root/clawd/sessions_archive:/app/sessions
+      - /root/clawd/projects/sessiontrack/project_data:/app/projects
+    environment:
+      - SESSIONS_PATH=/app/sessions
+      - PROJECTS_PATH=/app/projects
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: sessiontrack
+      POSTGRES_PASSWORD: sessiontrackpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
   postgres_data:
