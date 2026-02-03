@@ -16,7 +16,7 @@ fi
 ufw allow ssh
 
 # Allow SessionTrack ports
-ufw allow 3000/tcp  # Frontend
+ufw allow 3025/tcp  # Frontend (changed from 3000)
 ufw allow 8000/tcp  # Backend API
 ufw allow 5432/tcp  # PostgreSQL (optional, for external access)
 

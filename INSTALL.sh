@@ -40,12 +40,12 @@ docker ps | grep sessiontrack
 # Print access information
 echo "-------------------------------------------"
 echo "SessionTrack Dashboard is now running:"
-echo "Frontend: http://localhost:3000"
+echo "Frontend: http://localhost:3025"
 echo "Backend API: http://localhost:8000"
 echo "PostgreSQL: localhost:5432"
 echo "-------------------------------------------"
 
 # Optional: Open in browser if graphical environment is available
 if [[ -n "$DISPLAY" ]]; then
-    xdg-open http://localhost:3000 || echo "Dashboard available at http://localhost:3000"
+    xdg-open http://localhost:3025 || echo "Dashboard available at http://localhost:3025"
 fi
