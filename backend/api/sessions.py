@@ -1,13 +1,13 @@
 import os
 import json
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from typing import List, Dict
 
-app = FastAPI()
+router = APIRouter(prefix="/sessions", tags=["sessions"])
 
 SESSIONS_ARCHIVE = '/root/clawd/sessions_archive'
 
-@app.get("/sessions", response_model=List[Dict])
+@router.get("/", response_model=List[Dict])
 async def list_sessions():
     """
     Retrieve list of captured sessions
@@ -41,7 +41,7 @@ async def list_sessions():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving sessions: {str(e)}")
 
-@app.get("/session/{session_id}", response_model=Dict)
+@router.get("/{session_id}", response_model=Dict)
 async def get_session(session_id: str):
     """
     Retrieve full details of a specific session

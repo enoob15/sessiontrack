@@ -1,13 +1,13 @@
 import os
 import json
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from typing import List, Dict
 
-app = FastAPI()
+router = APIRouter(prefix="/projects", tags=["projects"])
 
 PROJECTS_PATH = '/root/clawd/projects/sessiontrack/project_data'
 
-@app.get("/projects", response_model=List[Dict])
+@router.get("/", response_model=List[Dict])
 async def list_projects():
     """
     Retrieve list of projects
@@ -41,7 +41,7 @@ async def list_projects():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving projects: {str(e)}")
 
-@app.get("/project/{project_id}", response_model=Dict)
+@router.get("/{project_id}", response_model=Dict)
 async def get_project(project_id: str):
     """
     Retrieve full details of a specific project

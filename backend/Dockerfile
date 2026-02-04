@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 8005
 
 # Use uvicorn to run the application
-CMD ["uvicorn", "api.sessions:app", "api.projects:app", "--host", "0.0.0.0", "--port", "8005"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8005", "--workers", "2"]
